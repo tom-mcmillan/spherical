@@ -69,7 +69,8 @@
       transform: translateX(-50%);
     }
     .axis-y {
-      left: -25px;
+      /* position label just outside left of box */
+      left: -40px;
       top: 50%;
       transform: translateY(-50%) rotate(-90deg);
     }
@@ -96,8 +97,9 @@
     <!-- Dynamic candidate criteria input -->
     <div class="container">
       <div class="box" id="box">
-        <div class="axis-label axis-x">Creativity →</div>
-        <div class="axis-label axis-y">↑ Domain Expertise</div>
+        <div class="axis-label axis-x">Cool Person →</div>
+        <!-- Y-axis label: outside the box, arrow after the text -->
+        <div class="axis-label axis-y">Gets Hospitality ↑</div>
         <div class="circle" id="circle"></div>
       </div>
       <div class="slider-container">
