@@ -51,6 +51,38 @@
     .output {
       margin-top: 20px;
     }
+    /* Textarea border matches chart color */
+    #requestBox {
+      border: 1px solid #ccc;
+      font-family: inherit;
+    }
+    /* Axis labels */
+    .axis-label {
+      position: absolute;
+      font-family: inherit;
+      font-size: 14px;
+      color: #333;
+    }
+    .axis-x {
+      bottom: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .axis-y {
+      left: -25px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+    }
+    /* Send button matches circle color */
+    #sendBtn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+    }
   </style>
 </head>
 <body>
@@ -58,16 +90,18 @@
   <div style="display:flex; gap:20px; align-items:flex-start;">
     <!-- Job description input -->
     <div>
-      <label for="requestBox">Job Description:</label><br>
-      <textarea id="requestBox" placeholder="Enter job description..." rows="6" cols="50"></textarea>
+      <label for="requestBox">Need:</label><br>
+      <textarea id="requestBox" placeholder="Ask anything..." rows="6" cols="50"></textarea>
     </div>
     <!-- Dynamic candidate criteria input -->
     <div class="container">
       <div class="box" id="box">
+        <div class="axis-label axis-x">Creativity →</div>
+        <div class="axis-label axis-y">↑ Domain Expertise</div>
         <div class="circle" id="circle"></div>
       </div>
       <div class="slider-container">
-        <label for="experience">Experience</label><br>
+        <label for="experience">Experience (yrs)</label><br>
         <input type="range" id="experience" min="0" max="10" value="0">
         <span id="expValue">0</span>
       </div>
@@ -90,7 +124,10 @@
     function updateCircle() {
       circle.style.left = `${posX * box.clientWidth}px`;
       circle.style.top = `${(1 - posY) * box.clientHeight}px`;
-      let size = 20 + (experience.value * 3);
+      // Scale circle diameter from 20px up to half the box height based on experience (0–10)
+      const minSize = 20;
+      const maxSize = box.clientHeight / 2;
+      const size = minSize + ((maxSize - minSize) * (experience.value / 10));
       circle.style.width = `${size}px`;
       circle.style.height = `${size}px`;
     }
