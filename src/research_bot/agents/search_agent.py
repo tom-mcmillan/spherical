@@ -22,6 +22,7 @@ INSTRUCTIONS = (
 search_agent = Agent(
     name="CandidateSearchAgent",
     instructions=INSTRUCTIONS,
+    model="gpt-4o",
     tools=[WebSearchTool()],
     model_settings=ModelSettings(tool_choice="required"),
     output_type=CandidateProfileList,
