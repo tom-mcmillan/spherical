@@ -1,6 +1,7 @@
 import os
 import json
 import requests
+import urllib.parse
 import openai
 from agents import function_tool
 from typing import List, Dict, Any
@@ -130,3 +131,25 @@ tools = [
     score_candidates_fn,
     justify_candidates_fn,
 ]
+
+@function_tool(
+    name_override="get_profile_data",
+    description_override="Fetch detailed LinkedIn profile data via ScrapeCreators API",
+    strict_mode=True,
+)
+async def get_profile_data_fn(profile_url: str) -> dict:
+    """
+    Retrieve detailed profile JSON from ScrapeCreators for the given LinkedIn URL.
+    """
+    api_key = os.getenv("SCRAPE_API_KEY", "")
+    if not api_key:
+        return {}
+    try:
+        # URL-encode the LinkedIn profile URL
+        encoded = urllib.parse.quote(profile_url, safe="")
+        url = f"https://api.scrapecreators.com/v1/linkedin/profile?url={encoded}"
+        resp = requests.get(url, headers={"x-api-key": api_key}, timeout=5)
+        return resp.json() if resp and resp.status_code == 200 else {}
+    except Exception:
+        logger.exception("get_profile_data_fn failed for %s", profile_url)
+        return {}

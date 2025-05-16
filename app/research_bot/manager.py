@@ -41,32 +41,16 @@ class ResearchManager:
         # Deduplicate by profile URL
         unique_profiles = list({p.profile_url: p for p in profiles}.values())
 
-        # Step 3: Enrich profiles with LinkedIn data via external API
-        enriched_profiles: list[dict] = []
-        scrape_key = os.getenv("SCRAPE_API_KEY", "")
-        for p in unique_profiles:
-            profile_data: dict = {}
-            if scrape_key:
-                try:
-                    encoded_url = urllib.parse.quote(p.profile_url, safe="")
-                    api_url = f"https://api.scrapecreators.com/v1/linkedin/profile?url={encoded_url}"
-                    resp = requests.get(api_url, headers={"x-api-key": scrape_key}, timeout=5)
-                    profile_data = resp.json() or {}
-                except Exception:
-                    profile_data = {}
-            enriched_profiles.append({
-                **p.dict(),
-                "profile_data": profile_data,
-            })
-
-        # Step 4: Shortlist and rank candidates using enriched data
+        # Step 3 & 4: Shortlist and rank candidates using the writer agent with enrichment tool
+        # Pass raw profiles; the writer_agent can call get_profile_data to enrich each candidate
+        raw_profiles = [p.dict() for p in unique_profiles]
         shortlist_prompt = (
             f"Job description: {description}\n"
             f"Experience range (years): {experience} to {experience + 2}\n"
             f"Creativity level (0.0-1.0): {creativity}\n"
             f"Domain expertise level (0.0-1.0): {domain_expertise}\n"
-            f"Candidates: {enriched_profiles}"
+            f"Candidates: {raw_profiles}"
         )
         shortlist_result = await Runner.run(writer_agent, shortlist_prompt)
-        # Return the candidate list as plain dicts
+        # Return the shortlisted candidates as plain dicts
         return [c.dict() for c in shortlist_result.final_output.candidates]

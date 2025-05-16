@@ -17,7 +17,10 @@ app = FastAPI()
 
 @app.get("/")
 async def get_index():
-    return FileResponse("static/index.html")
+    # Serve the single-page app index from the package's static directory
+    return FileResponse(
+        os.path.join(os.path.dirname(__file__), "static", "index.html")
+    )
 
 @app.post("/process")
 async def process(request: Request):
