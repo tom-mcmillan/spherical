@@ -1,6 +1,9 @@
 """
 Manager orchestrating the research bot workflow: plan → search → write.
 """
+import os
+import requests
+import urllib.parse
 from agents import Runner
 from .agents.planner_agent import CandidateSearchPlan, planner_agent
 from .agents.search_agent import search_agent
@@ -36,17 +39,34 @@ class ResearchManager:
                 continue
 
         # Deduplicate by profile URL
-        unique_profiles = {p.profile_url: p for p in profiles}.values()
+        unique_profiles = list({p.profile_url: p for p in profiles}.values())
 
-        # Step 3: Shortlist and rank candidates
-        profiles_json = [p.dict() for p in unique_profiles]
+        # Step 3: Enrich profiles with LinkedIn data via external API
+        enriched_profiles: list[dict] = []
+        scrape_key = os.getenv("SCRAPE_API_KEY", "")
+        for p in unique_profiles:
+            profile_data: dict = {}
+            if scrape_key:
+                try:
+                    encoded_url = urllib.parse.quote(p.profile_url, safe="")
+                    api_url = f"https://api.scrapecreators.com/v1/linkedin/profile?url={encoded_url}"
+                    resp = requests.get(api_url, headers={"x-api-key": scrape_key}, timeout=5)
+                    profile_data = resp.json() or {}
+                except Exception:
+                    profile_data = {}
+            enriched_profiles.append({
+                **p.dict(),
+                "profile_data": profile_data,
+            })
+
+        # Step 4: Shortlist and rank candidates using enriched data
         shortlist_prompt = (
             f"Job description: {description}\n"
             f"Experience range (years): {experience} to {experience + 2}\n"
             f"Creativity level (0.0-1.0): {creativity}\n"
             f"Domain expertise level (0.0-1.0): {domain_expertise}\n"
-            f"Candidates: {profiles_json}"
+            f"Candidates: {enriched_profiles}"
         )
         shortlist_result = await Runner.run(writer_agent, shortlist_prompt)
-        # Convert Pydantic models to dicts for JSON serialization
+        # Return the candidate list as plain dicts
         return [c.dict() for c in shortlist_result.final_output.candidates]
