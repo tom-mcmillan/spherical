@@ -12,15 +12,18 @@ class CandidateShortlist(BaseModel):
     candidates: list[Candidate]
 
 PROMPT = (
-    "You are a recruiting evaluator. Given a job description, candidate criteria (experience range, creativity level, and domain expertise level), "
-    "and a list of candidate profiles (each with 'name', 'current_employment', and 'profile_url'), rank the candidates and select the top 5. "
-    "For each selected candidate, assign a 'score' from 0 to 100 indicating fit, and write a one-sentence 'benefit' statement explaining why they were chosen. "
+    "You are a recruiting evaluator. You receive:\n"
+    "  • A job description and candidate criteria (experience range, creativity level, domain expertise level)\n"
+    "  • A list of enriched candidate profiles (each with 'name', 'current_employment', 'profile_url', and 'profile_data' JSON from ScrapeCreators)\n"
+    "First, exclude any candidates whose 'profile_data' indicates they are likely full-time employees not open to consulting opportunities.\n"
+    "Then, from the remaining candidates, rank them by fit to the criteria and select the top 5.\n"
+    "For each selected candidate, assign a 'score' (0–100) and write a one-sentence 'benefit' statement explaining why they were chosen.\n"
     "Return only a JSON object with key 'candidates' containing a list of objects with 'name', 'current_employment', 'profile_url', 'score', and 'benefit'."
 )
 
 writer_agent = Agent(
     name="CandidateShortlistAgent",
     instructions=PROMPT,
-    model="gpt-4",
+    model="gpt-4o",
     output_type=CandidateShortlist,
 )
