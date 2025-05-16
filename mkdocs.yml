@@ -1,0 +1,10 @@
+site_name: Candidate Finder Docs
+docs_dir: docs
+site_dir: site
+nav:
+  - Home: index.md
+  - Configuration: configuration.md
+  - Prompts: prompts.md
+  - Tools: tools.md
+theme:
+  name: material

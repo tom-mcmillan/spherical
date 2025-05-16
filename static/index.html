@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Candidate Finder</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    .container {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .box {
+      width: 300px;
+      height: 300px;
+      border: 1px solid #ccc;
+      position: relative;
+      background-image: 
+        linear-gradient(to right, #f0f0f0 1px, transparent 1px),
+        linear-gradient(to bottom, #f0f0f0 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+    .circle {
+      width: 20px;
+      height: 20px;
+      background-color: #007bff;
+      border-radius: 50%;
+      position: absolute;
+      cursor: grab;
+      transform: translate(-50%, -50%);
+    }
+    .slider-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .slider-container input[type="range"] {
+      /* Vertical slider styling */
+      -webkit-appearance: slider-vertical;
+      writing-mode: bt-lr; /* IE fallback */
+      width: 20px;
+      height: 300px;
+      margin: 10px 0;
+    }
+    .output {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Candidate Finder</h1>
+  <div style="display:flex; gap:20px; align-items:flex-start;">
+    <!-- Job description input -->
+    <div>
+      <label for="requestBox">Job Description:</label><br>
+      <textarea id="requestBox" placeholder="Enter job description..." rows="6" cols="50"></textarea>
+    </div>
+    <!-- Dynamic candidate criteria input -->
+    <div class="container">
+      <div class="box" id="box">
+        <div class="circle" id="circle"></div>
+      </div>
+      <div class="slider-container">
+        <label for="experience">Experience</label><br>
+        <input type="range" id="experience" min="0" max="10" value="0">
+        <span id="expValue">0</span>
+      </div>
+    </div>
+  </div>
+  <!-- Action button -->
+  <button id="sendBtn">Send</button>
+  <!-- Display candidate results -->
+  <div id="responseDiv"></div>
+  <script>
+    // Dynamic input variables
+    const box = document.getElementById('box');
+    const circle = document.getElementById('circle');
+    const experience = document.getElementById('experience');
+    const expValue = document.getElementById('expValue');
+    const resDiv = document.getElementById('responseDiv');
+
+    let posX = 0.5, posY = 0.5, dragging = false;
+
+    function updateCircle() {
+      circle.style.left = `${posX * box.clientWidth}px`;
+      circle.style.top = `${(1 - posY) * box.clientHeight}px`;
+      let size = 20 + (experience.value * 3);
+      circle.style.width = `${size}px`;
+      circle.style.height = `${size}px`;
+    }
+
+    circle.addEventListener('mousedown', () => dragging = true);
+    document.addEventListener('mouseup', () => dragging = false);
+
+    box.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
+      const rect = box.getBoundingClientRect();
+      posX = Math.min(Math.max(0, (e.clientX - rect.left) / rect.width), 1);
+      posY = 1 - Math.min(Math.max(0, (e.clientY - rect.top) / rect.height), 1);
+      updateCircle();
+    });
+
+    experience.addEventListener('input', () => {
+      expValue.textContent = experience.value;
+      updateCircle();
+    });
+
+
+    document.getElementById('sendBtn').onclick = async () => {
+      const jobDesc = document.getElementById('requestBox').value.trim();
+      if (!jobDesc) return;
+      resDiv.innerHTML = 'Loading…';
+      const payload = {
+        request: jobDesc,
+        creativity: posX,
+        hospitality_expertise: posY,
+        experience: parseInt(experience.value, 10)
+      };
+      try {
+        const res = await fetch('/process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) {
+          const e = await res.json();
+          resDiv.innerHTML = `<pre>${JSON.stringify(e, null, 2)}</pre>`;
+          return;
+        }
+        const { candidates } = await res.json();
+        let table = '<table border="1"><tr><th>Name</th><th>LinkedIn</th><th>Benefit</th></tr>';
+        for (const c of candidates) {
+          table += `<tr><td>${c.name}</td><td><a href="${c.profile_url}" target="_blank">${c.profile_url}</a></td><td>${c.benefit}</td></tr>`;
+        }
+        table += '</table>';
+        resDiv.innerHTML = table;
+      } catch (err) {
+        resDiv.innerHTML = `<pre>${err}</pre>`;
+      }
+    };
+
+    // Initialize circle position and size
+    updateCircle();
+  </script>
+</body>
+</html>
